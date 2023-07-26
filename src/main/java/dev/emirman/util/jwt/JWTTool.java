@@ -71,7 +71,7 @@ public class JWTTool {
     }
 
     public Algorithm algorithm() {
-        return algorithm;
+        return algorithm == null ? Algorithm.HMAC256(secret) : algorithm;
     }
 
     public JWTTool withAlgorithm(Algorithm algorithm) {
@@ -93,7 +93,7 @@ public class JWTTool {
         boolean isValidToken = validator.isValidString(token);
         if (!isValidToken) throw new InvalidToken();
         try {
-            JWTVerifier verifier = JWT.require(algorithm).build();
+            JWTVerifier verifier = JWT.require(algorithm()).build();
             return verifier.verify(token);
         } catch (Exception e) {
             throw new InvalidToken();
@@ -123,7 +123,7 @@ public class JWTTool {
         DecodedJWT decodedJWT = decodedJWTFromToken(token);
         boolean expired = isTokenExpired(token);
         boolean issuer = decodedJWT.getIssuer().equals(issuer());
-        boolean audience =  Arrays.stream(audience())
+        boolean audience = Arrays.stream(audience())
                 .anyMatch(s -> decodedJWT.getAudience().contains(s));
         return !expired && issuer && audience;
     }
@@ -140,7 +140,7 @@ public class JWTTool {
                 .withAudience(audience)
                 .withExpiresAt(new Date(System.currentTimeMillis() + expiration))
                 .withArrayClaim("claims", claims)
-                .sign(algorithm);
+                .sign(algorithm());
     }
 
     public String generateToken(String subject, String... claims) {
